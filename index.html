@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <base target="_self">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Agri Advisor - Your Virtual Farming Assistant</title>
+    <meta name="description" content="AI-powered agriculture advisor providing weather alerts, government schemes, and farming recommendations">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            300: '#86efac',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        },
+                        secondary: {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        }
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .hero-bg {
+            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://picsum.photos/1920/1080?random=1&blur=2');
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chat-bubble {
+            border-radius: 20px;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .chat-bubble.user {
+            border-radius: 20px;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .typing-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #4b5563;
+            margin: 0 3px;
+            animation: bounce 1.3s infinite ease-in-out;
+        }
+        
+        .typing-indicator:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+        
+        .typing-indicator:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+        
+        @keyframes bounce {
+            0%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+        }
+        
+        .file-upload {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-upload-input {
+            position: absolute;
+            top: 0;
+            right: 0;
+            margin: 0;
+            padding: 0;
+            font-size: 20px;
+            cursor: pointer;
+            opacity: 0;
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-primary-50">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        
+        // Main App Component
+        function App() {
+            const [activeTab, setActiveTab] = useState('home');
+            
+            return (
+                <div className="min-h-screen flex flex-col">
+                    <Header activeTab={activeTab} setActiveTab={setActiveTab} />
+                    <main className="flex-grow">
+                        {activeTab === 'home' && <HomePage />}
+                        {activeTab === 'chat' && <ChatAssistant />}
+                        {activeTab === 'weather' && <WeatherAlerts />}
+                        {activeTab === 'schemes' && <GovernmentSchemes />}
+                        {activeTab === 'fertilizers' && <FertilizersPesticides />}
+                    </main>
+                    <Footer />
+                </div>
+            );
+        }
+        
+        // Header Component
+        function Header({ activeTab, setActiveTab }) {
+            return (
+                <header className="bg-white shadow-md">
+                    <div className="container mx-auto px-4 py-4">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center">
+                                <img src="https://picsum.photos/50?random=10" alt="AI-Agri Logo" className="h-10 w-10 rounded-full mr-3" />
+                                <h1 className="text-2xl font-bold text-primary-800">AI-Agri Advisor</h1>
+                            </div>
+                            <nav className="hidden md:flex space-x-6">
+                                <button 
+                                    onClick={() => setActiveTab('home')} 
+                                    className={`px-3 py-2 rounded-md ${activeTab === 'home' ? 'bg-primary-100 text-primary-800 font-medium' : 'text-gray-600 hover:text-primary-700'}`}
+                                >
+                                    Home
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('chat')} 
+                                    className={`px-3 py-2 rounded-md ${activeTab === 'chat' ? 'bg-primary-100 text-primary-800 font-medium' : 'text-gray-600 hover:text-primary-700'}`}
+                                >
+                                    AI Chat
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('weather')} 
+                                    className={`px-3 py-2 rounded-md ${activeTab === 'weather' ? 'bg-primary-100 text-primary-800 font-medium' : 'text-gray-600 hover:text-primary-700'}`}
+                                >
+                                    Weather
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('schemes')} 
+                                    className={`px-3 py-2 rounded-md ${activeTab === 'schemes' ? 'bg-primary-100 text-primary-800 font-medium' : 'text-gray-600 hover:text-primary-700'}`}
+                                >
+                                    Schemes
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('fertilizers')} 
+                                    className={`px-3 py-2 rounded-md ${activeTab === 'fertilizers' ? 'bg-primary-100 text-primary-800 font-medium' : 'text-gray-600 hover:text-primary-700'}`}
+                                >
+                                    Fertilizers
+                                </button>
+                            </nav>
+                            <button className="md:hidden text-gray-600">
+                                <i className="fas fa-bars text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                </header>
+            );
+        }
+        
+        // Home Page Component
+        function HomePage() {
+            return (
+                <div>
+                    {/* Hero Section */}
+                    <section className="hero-bg text-white py-20 px-4">
+                        <div className="container mx-auto text-center">
+                            <h2 className="text-4xl md:text-5xl font-bold mb-6">Your AI-Powered Farming Assistant</h2>
+                            <p className="text-xl mb-8 max-w-3xl mx-auto">Get personalized advice, weather alerts, government scheme information, and crop management tips tailored to your farm's needs.</p>
+                            <button className="bg-primary-500 hover:bg-primary-600 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300">
+                                Get Started Today
+                            </button>
+                        </div>
+                    </section>
+                    
+                    {/* Features Section */}
+                    <section className="py-16 bg-white">
+                        <div className="container mx-auto px-4">
+                            <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">How We Can Help You</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                                <FeatureCard 
+                                    icon="fas fa-comments" 
+                                    title="AI Chat Assistant" 
+                                    description="Get instant answers to your farming questions with our AI-powered chatbot"
+                                    onClick={() => window.location.href = '#chat'}
+                                />
+                                <FeatureCard 
+                                    icon="fas fa-cloud-sun" 
+                                    title="Weather Alerts" 
+                                    description="Receive timely weather forecasts and alerts specific to your region"
+                                    onClick={() => window.location.href = '#weather'}
+                                />
+                                <FeatureCard 
+                                    icon="fas fa-file-invoice-dollar" 
+                                    title="Government Schemes" 
+                                    description="Discover eligible government schemes and subsidies for your farming needs"
+                                    onClick={() => window.location.href = '#schemes'}
+                                />
+                                <FeatureCard 
+                                    icon="fas fa-seedling" 
+                                    title="Fertilizers & Pesticides" 
+                                    description="Get recommendations for the right fertilizers and pesticides for your crops"
+                                    onClick={() => window.location.href = '#fertilizers'}
+                                />
+                            </div>
+                        </div>
+                    </section>
+                    
+                    {/* Testimonials Section */}
+                    <section className="py-16 bg-primary-50">
+                        <div className="container mx-auto px-4">
+                            <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">What Farmers Say</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <Testimonial 
+                                    name="Rajesh Kumar" 
+                                    location="Punjab" 
+                                    text="The weather alerts have saved my crops multiple times during unexpected rainfall. This AI assistant is like having an expert by my side 24/7." 
+                                    image="https://picsum.photos/100?random=11"
+                                />
+                                <Testimonial 
+                                    name="Priya Singh" 
+                                    location="Maharashtra" 
+                                    text="The government scheme information helped me secure a subsidy for drip irrigation. I'm grateful for this platform." 
+                                    image="https://picsum.photos/100?random=12"
+                                />
+                                <Testimonial 
+                                    name="Vikram Patel" 
+                                    location="Gujarat" 
+                                    text="The fertilizer recommendations have improved my yield by 25%. The AI chat gives practical advice that works in real farming conditions." 
+                                    image="https://picsum.photos/100?random=13"
+                                />
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            );
+        }
+        
+        // Feature Card Component
+        function FeatureCard({ icon, title, description, onClick }) {
+            return (
+                <div 
+                    className="feature-card bg-white rounded-xl p-6 shadow-md text-center transition duration-300 cursor-pointer"
+                    onClick={onClick}
+                >
+                    <div className="bg-primary-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i className={`${icon} text-primary-600 text-2xl`}></i>
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">{title}</h3>
+                    <p className="text-gray-600">{description}</p>
+                </div>
+            );
+        }
+        
+        // Testimonial Component
+        function Testimonial({ name, location, text, image }) {
+            return (
+                <div className="bg-white rounded-xl p-6 shadow-md">
+                    <p className="text-gray-600 italic mb-6">"{text}"</p>
+                    <div className="flex items-center">
+                        <img src={image} alt={name} className="w-12 h-12 rounded-full mr-4" />
+                        <div>
+                            <h4 className="font-semibold text-gray-800">{name}</h4>
+                            <p className="text-gray-600 text-sm">{location}</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        // Chat Assistant Component
+        function ChatAssistant() {
+            const [messages, setMessages] = useState([
+                { id: 1, text: "Hello! I'm your AI agriculture assistant. How can I help you with your farming questions today?", sender: "bot" }
+            ]);
+            const [inputText, setInputText] = useState("");
+            const [isTyping, setIsTyping] = useState(false);
+            const [uploadedImage, setUploadedImage] = useState(null);
+            const messagesEndRef = useRef(null);
+            
+            const scrollToBottom = () => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            };
+            
+            useEffect(() => {
+                scrollToBottom();
+            }, [messages]);
+            
+            // Improved response generation based on user queries
+            const generateAIResponse = (userQuery) => {
+                const query = userQuery.toLowerCase();
+                
+                // Crop-specific responses
+                if (query.includes("wheat")) {
+                    return "For wheat cultivation, I recommend using 100 kg/ha of urea at sowing and during tillering stage. Also consider 120 kg/ha of DAP as basal application. For pest control in wheat, Chlorpyriphos at 4 L/ha for termite control is effective.";
+                }
+                else if (query.includes("rice") || query.includes("paddy")) {
+                    return "Rice cultivation benefits from 150 kg/ha of urea in split applications. Use 250 kg/ha of SSP as basal application. For pest management, Carbofuran at 1 kg/ha is effective against stem borers when applied at transplanting.";
+                }
+                else if (query.includes("tomato")) {
+                    return "For tomatoes, ensure well-drained soil with pH between 6.0-6.8. Use neem oil spray for organic pest control against aphids and whiteflies. For fungal issues, apply Mancozeb at 2.5 g/L at first sign of disease.";
+                }
+                else if (query.includes("potato")) {
+                    return "Potatoes thrive in loose, well-drained soil with pH 5.0-5.5. For fertilizer, use 150 kg N/ha, 60 kg P2O5/ha, and 110 kg K2O/ha. Protect against late blight with fungicides containing chlorothalonil.";
+                }
+                
+                // Fertilizer and pesticide responses
+                else if (query.includes("fertilizer")) {
+                    return "The right fertilizer depends on your soil type and crop. I recommend getting a soil test first. Generally, NPK fertilizers are commonly used, with ratios varying by crop growth stage. Organic options like compost and manure are excellent for soil health.";
+                }
+                else if (query.includes("pesticide") || query.includes("pest")) {
+                    return "For pest control, I recommend integrated pest management (IPM) approaches. Start with cultural controls like crop rotation, then biological controls before considering chemical options. Neem-based products are effective for many common pests while being environmentally friendly.";
+                }
+                
+                // Weather and irrigation responses
+                else if (query.includes("weather") || query.includes("rain")) {
+                    return "Weather significantly impacts farming decisions. I recommend checking the weather alerts section for detailed forecasts. Generally, irrigate in early morning or late evening to reduce evaporation, and adjust based on rainfall predictions.";
+                }
+                else if (query.includes("irrigat") || query.includes("water")) {
+                    return "Proper irrigation is crucial. Most crops need about 1 inch of water per week, either from rainfall or irrigation. Drip irrigation is efficient for water conservation. Always check soil moisture at root level before watering.";
+                }
+                
+                // Government schemes
+                else if (query.includes("government") || query.includes("scheme") || query.includes("subsidy")) {
+                    return "There are several government schemes available for farmers. PM-KISAN provides ₹6,000 per year to landholding farmers. PMFBY offers crop insurance with low premiums. Check the Government Schemes section for details on eligibility and application process.";
+                }
+                
+                // Soil health
+                else if (query.includes("soil") || query.includes("ph")) {
+                    return "Soil health is fundamental to successful farming. I recommend getting a professional soil test to determine pH, nutrient levels, and organic matter content. Most crops prefer pH between 6.0-7.0. Adding organic matter improves soil structure and fertility.";
+                }
+                
+                // Default response for unrecognized queries
+                return "Thank you for your question. As an AI agriculture assistant, I can help with crop management, fertilizer recommendations, pest control strategies, weather impacts on farming, and information about government schemes. Could you please provide more specific details about your farming situation?";
+            };
+            
+            const handleSendMessage = async () => {
+                if (inputText.trim() === "" && !uploadedImage) return;
+
+                const newUserMessage = { id: Date.now(), text: inputText, sender: "user" };
+                setMessages(prev => [...prev, newUserMessage]);
+                setInputText("");
+                setUploadedImage(null);
+
+                setIsTyping(true);
+                const aiResponse = await callOpenAI(newUserMessage.text);
+                setIsTyping(false);
+
+                setMessages(prev => [
+                    ...prev,
+                    { id: Date.now() + 1, text: aiResponse, sender: "bot" }
+                ]);
+            };
+            
+            const handleKeyPress = (e) => {
+                if (e.key === "Enter") {
+                    handleSendMessage();
+                }
+            };
+            
+            const handleImageUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        setUploadedImage(event.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            
+            const removeImage = () => {
+                setUploadedImage(null);
+            };
+            
+            return (
+                <div className="container mx-auto px-4 py-8">
+                    <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">AI Chat Assistant</h2>
+                    
+                    <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
+                        <div className="p-6">
+                            <div className="h-96 overflow-y-auto mb-4">
+                                {messages.map(message => (
+                                    <div 
+                                        key={message.id} 
+                                        className={`flex mb-4 ${message.sender === "user" ? "justify-end" : "justify-start"}`}
+                                    >
+                                        <div className={`max-w-xs md:max-w-md lg:max-w-lg p-4 ${message.sender === "user" ? "bg-primary-500 text-white chat-bubble user" : "bg-gray-200 text-gray-800 chat-bubble"}`}>
+                                            {message.image && (
+                                                <div className="mb-2">
+                                                    <img 
+                                                        src={message.image} 
+                                                        alt="Uploaded by user" 
+                                                        className="max-w-full h-auto rounded-lg"
+                                                    />
+                                                </div>
+                                            )}
+                                            {message.text}
+                                        </div>
+                                    </div>
+                                ))}
+                                {isTyping && (
+                                    <div className="flex mb-4 justify-start">
+                                        <div className="bg-gray-200 text-gray-800 p-4 rounded-2xl rounded-bl-none">
+                                            <div className="flex">
+                                                <div className="typing-indicator"></div>
+                                                <div className="typing-indicator"></div>
+                                                <div className="typing-indicator"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                <div ref={messagesEndRef} />
+                            </div>
+                            
+                            <div className="flex flex-col space-y-2">
+                                {uploadedImage && (
+                                    <div className="relative inline-block">
+                                        <img 
+                                            src={uploadedImage} 
+                                            alt="Preview" 
+                                            className="h-20 w-20 object-cover rounded-lg border border-gray-300"
+                                        />
+                                        <button 
+                                            onClick={removeImage}
+                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                )}
+                                
+                                <div className="flex">
+                                    <div className="file-upload bg-gray-100 border border-gray-300 rounded-l-lg flex items-center justify-center px-3 cursor-pointer">
+                                        <i className="fas fa-image text-gray-600"></i>
+                                        <input 
+                                            type="file" 
+                                            className="file-upload-input"
+                                            accept="image/*"
+                                            onChange={handleImageUpload}
+                                        />
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        value={inputText}
+                                        onChange={(e) => setInputText(e.target.value)}
+                                        onKeyPress={handleKeyPress}
+                                        placeholder="Ask your farming question or upload an image..."
+                                        className="flex-grow border border-gray-300 py-3 px-4 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                    />
+                                    <button 
+                                        onClick={handleSendMessage}
+                                        disabled={inputText.trim() === "" && !uploadedImage}
+                                        className="bg-primary-500 hover:bg-primary-600 disabled:bg-gray-400 text-white px-6 rounded-r-lg transition duration-300"
+                                    >
+                                        <i className="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="max-w-4xl mx-auto mt-8">
+                        <h3 className="text-xl font-semibold text-gray-800 mb-4">Common Questions</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <button 
+                                className="bg-white p-4 rounded-lg shadow-sm text-left hover:bg-primary-50 transition duration-300"
+                                onClick={() => setInputText("What's the best fertilizer for wheat?")}
+                            >
+                                <p className="font-medium text-gray-800">What's the best fertilizer for wheat?</p>
+                            </button>
+                            <button 
+                                className="bg-white p-4 rounded-lg shadow-sm text-left hover:bg-primary-50 transition duration-300"
+                                onClick={() => setInputText("How to control pests in tomato plants?")}
+                            >
+                                <p className="font-medium text-gray-800">How to control pests in tomato plants?</p>
+                            </button>
+                            <button 
+                                className="bg-white p-4 rounded-lg shadow-sm text-left hover:bg-primary-50 transition duration-300"
+                                onClick={() => setInputText("When is the right time to harvest potatoes?")}
+                            >
+                                <p className="font-medium text-gray-800">When is the right time to harvest potatoes?</p>
+                            </button>
+                            <button 
+                                className="bg-white p-4 rounded-lg shadow-sm text-left hover:bg-primary-50 transition duration-300"
+                                onClick={() => setInputText("What government schemes are available for organic farming?")}
+                            >
+                                <p className="font-medium text-gray-800">What government schemes are available for organic farming?</p>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div className="max-w-4xl mx-auto mt-8 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                        <h3 className="text-lg font-semibold text-yellow-800 mb-2">Image Analysis Feature</h3>
+                        <p className="text-yellow-700">
+                            You can now upload images of plant diseases, pests, or crop issues for analysis. Our AI will examine the image and provide specific recommendations for treatment and prevention.
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+        
+        // Weather Alerts Component
+        function WeatherAlerts() {
+            const [location, setLocation] = useState("Punjab");
+            
+            const weatherData = {
+                "Punjab": {
+                    current: { temp: 28, condition: "Partly Cloudy", humidity: 65, wind: 12 },
+                    forecast: [
+                        { day: "Today", high: 30, low: 22, condition: "Partly Cloudy" },
+                        { day: "Tomorrow", high: 29, low: 21, condition: "Sunny" },
+                        { day: "Day 3", high: 31, low: 23, condition: "Clear" },
+                        { day: "Day 4", high: 27, low: 20, condition: "Light Rain" },
+                        { day: "Day 5", high: 26, low: 19, condition: "Rain" }
+                    ],
+                    alerts: ["Light rainfall expected in 3 days. Prepare drainage systems."]
+                },
+                "Maharashtra": {
+                    current: { temp: 32, condition: "Sunny", humidity: 55, wind: 8 },
+                    forecast: [
+                        { day: "Today", high: 32, low: 24, condition: "Sunny" },
+                        { day: "Tomorrow", high: 33, low: 25, condition: "Sunny" },
+                        { day: "Day 3", high: 34, low: 25, condition: "Clear" },
+                        { day: "Day 4", high: 33, low: 24, condition: "Partly Cloudy" },
+                        { day: "Day 5", high: 32, low: 24, condition: "Partly Cloudy" }
+                    ],
+                    alerts: ["High temperatures expected. Ensure proper irrigation."]
+                },
+                "Gujarat": {
+                    current: { temp: 35, condition: "Clear", humidity: 45, wind: 10 },
+                    forecast: [
+                        { day: "Today", high: 35, low: 26, condition: "Clear" },
+                        { day: "Tomorrow", high: 36, low: 27, condition: "Sunny" },
+                        { day: "Day 3", high: 37, low: 27, condition: "Sunny" },
+                        { day: "Day 4", high: 36, low: 26, condition: "Clear" },
+                        { day: "Day 5", high: 35, low: 25, condition: "Clear" }
+                    ],
+                    alerts: ["Heatwave warning. Protect crops with shade nets if possible."]
+                }
+            };
+            
+            const currentData = weatherData[location] || weatherData["Punjab"];
+            
+            return (
+                <div className="container mx-auto px-4 py-8">
+                    <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Weather Alerts & Forecast</h2>
+                    
+                    <div className="max-w-4xl mx-auto mb-8">
+                        <div className="bg-white rounded-xl shadow-md p-6">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                                <h3 className="text-xl font-semibold text-gray-800 mb-4 md:mb-0">Select Your Region</h3>
+                                <div className="flex space-x-2">
+                                    {Object.keys(weatherData).map(region => (
+                                        <button
+                                            key={region}
+                                            onClick={() => setLocation(region)}
+                                            className={`px-4 py-2 rounded-full ${location === region ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                                        >
+                                            {region}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                <div className="bg-primary-50 p-4 rounded-lg">
+                                    <h4 className="font-semibold text-gray-800 mb-2">Current Weather</h4>
+                                    <div className="text-4xl font-bold text-primary-600">{currentData.current.temp}°C</div>
+                                    <div className="text-gray-600">{currentData.current.condition}</div>
+                                </div>
+                                <div className="bg-primary-50 p-4 rounded-lg">
+                                    <h4 className="font-semibold text-gray-800 mb-2">Humidity</h4>
+                                    <div className="text-4xl font-bold text-primary-600">{currentData.current.humidity}%</div>
+                                    <div className="text-gray-600">Relative humidity</div>
+                                </div>
+                                <div className="bg-primary-50 p-4 rounded-lg">
+                                    <h4 className="font-semibold text-gray-800 mb-2">Wind Speed</h4>
+                                    <div className="text-4xl font-bold text-primary-600">{currentData.current.wind} km/h</div>
+                                    <div className="text-gray-600">Wind speed</div>
+                                </div>
+                            </div>
+                            
+                            <h4 className="font-semibold text-gray-800 mb-4">5-Day Forecast</h4>
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                                {currentData.forecast.map((day, index) => (
+                                    <div key={index} className="bg-gray-100 p-3 rounded-lg text-center">
+                                        <div className="font-medium text-gray-800">{day.day}</div>
+                                        <div className="text-2xl font-bold text-primary-600">{day.high}°</div>
+                                        <div className="text-gray-600 text-sm">{day.low}°</div>
+                                        <div className="text-gray-600 text-sm mt-1">{day.condition}</div>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <h4 className="font-semibold text-gray-800 mb-4">Weather Alerts</h4>
+                            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                                {currentData.alerts.map((alert, index) => (
+                                    <div key={index} className="flex">
+                                        <div className="mr-3 text-yellow-400">
+                                            <i className="fas fa-exclamation-triangle"></i>
+                                        </div>
+                                        <div className="text-yellow-700">
+                                            <p>{alert}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="max-w-4xl mx-auto">
+                        <h3 className="text-xl font-semibold text-gray-800 mb-4">Weather Advisory</h3>
+                        <div className="bg-white rounded-xl shadow-md p-6">
+                            <div className="prose max-w-none">
+                                <p>Based on the current weather conditions and forecast, here are some recommendations for your farming activities:</p>
+                                <ul className="list-disc pl-5 mt-3">
+                                    <li>Schedule irrigation during early morning or late evening to reduce water evaporation</li>
+                                    <li>Consider using shade nets for sensitive crops during peak sunlight hours</li>
+                                    <li>Monitor soil moisture levels regularly and adjust irrigation accordingly</li>
+                                    <li>Prepare drainage systems in case of predicted rainfall</li>
+                                    <li>Delay application of fertilizers if heavy rain is expected within 24 hours</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        // Government Schemes Component
+        function GovernmentSchemes() {
+            const schemes = [
+                {
+                    title: "PM-KISAN",
+                    description: "Pradhan Mantri Kisan Samman Nidhi provides financial assistance to landholding farmer families.",
+                    eligibility: "Small and marginal farmer families with cultivable land",
+                    benefits: "₹6,000 per year in three equal installments",
+                    link: "#"
+                },
+                {
+                    title: "PMFBY",
+                    description: "Pradhan Mantri Fasal Bima Yojana provides insurance coverage for crop loss.",
+                    eligibility: "All farmers including sharecroppers and tenant farmers",
+                    benefits: "Premium: 2% for Kharif, 1.5% for Rabi, 5% for commercial crops",
+                    link: "#"
+                },
+                {
+                    title: "NAIS",
+                    description: "National Agricultural Insurance Scheme provides coverage for food crops, oilseeds, and annual commercial crops.",
+                    eligibility: "All farmers growing notified crops in notified areas",
+                    benefits: "Comprehensive risk insurance against yield losses",
+                    link: "#"
+                },
+                {
+                    title: "SMAM",
+                    description: "Sub-Mission on Agricultural Mechanization promotes agricultural mechanization among small and marginal farmers.",
+                    eligibility: "Individual farmers, custom hiring centers, farmer groups",
+                    benefits: "Financial assistance for purchasing agricultural machinery",
+                    link: "#"
+                },
+                {
+                    title: "PKVY",
+                    description: "Paramparagat Krishi Vikas Yojana promotes organic farming practices.",
+                    eligibility: "Farmers willing to practice organic farming",
+                    benefits: "Financial assistance of ₹50,000 per hectare/3 years",
+                    link: "#"
+                },
+                {
+                    title: "NFSM",
+                    description: "National Food Security Mission increases production of rice, wheat, pulses, and coarse cereals.",
+                    eligibility: "Farmers in identified districts across the country",
+                    benefits: "Assistance for seeds, treatments, nutrient management etc.",
+                    link: "#"
+                }
+            ];
+            
+            return (
+                <div className="container mx-auto px-4 py-8">
+                    <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Government Schemes</h2>
+                    
+                    <div className="max-w-4xl mx-auto mb-8">
+                        <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+                            <h3 className="text-xl font-semibold text-gray-800 mb-4">Find Eligible Schemes</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label className="block text-gray-700 mb-2">State</label>
+                                    <select className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                        <option>Punjab</option>
+                                        <option>Maharashtra</option>
+                                        <option>Gujarat</option>
+                                        <option>Uttar Pradesh</option>
+                                        <option>Karnataka</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-gray-700 mb-2">Crop Type</label>
+                                    <select className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                        <option>Wheat</option>
+                                        <option>Rice</option>
+                                        <option>Cotton</option>
+                                        <option>Sugarcane</option>
+                                        <option>Pulses</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button className="bg-primary-500 hover:bg-primary-600 text-white font-medium py-2 px-6 rounded-lg transition duration-300">
+                                Check Eligibility
+                            </button>
+                        </div>
+                        
+                        <h3 className="text-xl font-semibold text-gray-800 mb-4">Available Schemes</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {schemes.map((scheme, index) => (
+                                <div key={index} className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition duration-300">
+                                    <h4 className="text-lg font-semibold text-primary-800 mb-2">{scheme.title}</h4>
+                                    <p className="text-gray-600 mb-4">{scheme.description}</p>
+                                    <div className="mb-4">
+                                        <h5 className="font-medium text-gray-800 mb-1">Eligibility</h5>
+                                        <p className="text-gray-600 text-sm">{scheme.eligibility}</p>
+                                    </div>
+                                    <div className="mb-4">
+                                        <h5 className="font-medium text-gray-800 mb-1">Benefits</h5>
+                                        <p className="text-gray-600 text-sm">{scheme.benefits}</p>
+                                    </div>
+                                    <button className="text-primary-600 hover:text-primary-700 font-medium text-sm flex items-center">
+                                        Learn more <i className="fas fa-arrow-right ml-2 text-xs"></i>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        // Fertilizers and Pesticides Component
+        function FertilizersPesticides() {
+            const [selectedCrop, setSelectedCrop] = useState("Wheat");
+            
+            const recommendations = {
+                "Wheat": {
+                    fertilizers: [
+                        { name: "Urea", dosage: "100 kg/ha", timing: "At sowing and during tillering stage" },
+                        { name: "DAP", dosage: "120 kg/ha", timing: "Basal application at sowing" },
+                        { name: "MOP", dosage: "60 kg/ha", timing: "At sowing" }
+                    ],
+                    pesticides: [
+                        { name: "Chlorpyriphos", target: "Termites", dosage: "4 L/ha", timing: "Soil treatment before sowing" },
+                        { name: "Mancozeb", target: "Leaf rust", dosage: "2.5 g/L", timing: "At first appearance of disease" }
+                    ]
+                },
+                "Rice": {
+                    fertilizers: [
+                        { name: "Urea", dosage: "150 kg/ha", timing: "Split application: basal, tillering, panicle initiation" },
+                        { name: "SSP", dosage: "250 kg/ha", timing: "Basal application" },
+                        { name: "MOP", dosage: "80 kg/ha", timing: "Split application" }
+                    ],
+                    pesticides: [
+                        { name: "Carbofuran", target: "Stem borer", dosage: "1 kg/ha", timing: "At transplanting" },
+                        { name: "Tricyclazole", target: "Blast disease", dosage: "1 g/L", timing: "Preventive spray" }
+                    ]
+                },
+                "Cotton": {
+                    fertilizers: [
+                        { name: "Urea", dosage: "200 kg/ha", timing: "Split application" },
+                        { name: "DAP", dosage: "150 kg/ha", timing: "Basal application" },
+                        { name: "MOP", dosage: "100 kg/ha", timing: "Split application" }
+                    ],
+                    pesticides: [
+                        { name: "Acephate", target: "Bollworms", dosage: "1.5 g/L", timing: "At first appearance" },
+                        { name: "Dicofol", target: "Mites", dosage: "2.5 mL/L", timing: "When infestation noticed" }
+                    ]
+                }
+            };
+            
+            const currentData = recommendations[selectedCrop] || recommendations["Wheat"];
+            
+            return (
+                <div className="container mx-auto px-4 py-8">
+                    <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Fertilizers & Pesticides</h2>
+                    
+                    <div className="max-w-4xl mx-auto">
+                        <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+                            <h3 className="text-xl font-semibold text-gray-800 mb-4">Crop-Specific Recommendations</h3>
+                            <div className="mb-6">
+                                <label className="block text-gray-700 mb-2">Select Crop</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {Object.keys(recommendations).map(crop => (
+                                        <button
+                                            key={crop}
+                                            onClick={() => setSelectedCrop(crop)}
+                                            className={`px-4 py-2 rounded-full ${selectedCrop === crop ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                                        >
+                                            {crop}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <h4 className="text-lg font-semibold text-gray-800 mb-4">Fertilizer Recommendations</h4>
+                                    <div className="space-y-4">
+                                        {currentData.fertilizers.map((item, index) => (
+                                            <div key={index} className="bg-primary-50 p-4 rounded-lg">
+                                                <h5 className="font-medium text-primary-800">{item.name}</h5>
+                                                <div className="text-sm text-gray-700 mt-2">
+                                                    <div><span className="font-medium">Dosage:</span> {item.dosage}</div>
+                                                    <div><span className="font-medium">Timing:</span> {item.timing}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h4 className="text-lg font-semibold text-gray-800 mb-4">Pesticide Recommendations</h4>
+                                    <div className="space-y-4">
+                                        {currentData.pesticides.map((item, index) => (
+                                            <div key={index} className="bg-green-50 p-4 rounded-lg">
+                                                <h5 className="font-medium text-green-800">{item.name}</h5>
+                                                <div className="text-sm text-gray-700 mt-2">
+                                                    <div><span className="font-medium">Target:</span> {item.target}</div>
+                                                    <div><span className="font-medium">Dosage:</span> {item.dosage}</div>
+                                                    <div><span className="font-medium">Timing:</span> {item.timing}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="bg-white rounded-xl shadow-md p-6">
+                            <h3 className="text-xl font-semibold text-gray-800 mb-4">General Guidelines</h3>
+                            <div className="prose max-w-none">
+                                <ul className="list-disc pl-5">
+                                    <li>Always conduct soil testing before fertilizer application</li>
+                                    <li>Follow recommended dosage to avoid soil degradation</li>
+                                    <li>Use protective gear when handling pesticides</li>
+                                    <li>Follow the recommended waiting period after pesticide application before harvest</li>
+                                    <li>Consider integrated pest management (IPM) approaches for sustainable farming</li>
+                                    <li>Rotate pesticides to prevent resistance development in pests</li>
+                                    <li>Store fertilizers and pesticides in their original containers away from children and animals</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        // Footer Component
+        function Footer() {
+            return (
+                <footer className="bg-gray-800 text-white py-12">
+                    <div className="container mx-auto px-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                            <div>
+                                <h3 className="text-xl font-bold mb-4">AI-Agri Advisor</h3>
+                                <p className="text-gray-400">Your intelligent farming assistant providing personalized advice and recommendations.</p>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold mb-4">Quick Links</h4>
+                                <ul className="space-y-2">
+                                    <li><a href="#" className="text-gray-400 hover:text-white transition duration-300">Home</a></li>
+                                    <li><a href="#" className="text-gray-400 hover:text-white transition duration-300">AI Chat</a></li>
+                                    <li><a href="#" className="text-gray-400 hover:text-white transition duration-300">Weather Alerts</a></li>
+                                    <li><a href="#" className="text-gray-400 hover:text-white transition duration-300">Government Schemes</a></li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold mb-4">Resources</h4>
+                                <ul className="space-y-2">
+                                    <li><a href="#" className="text-gray-400 hover:text-white transition duration-300">Farming Tips</a></li>
+                                    <li><a href="#" className="text-gray-400 hover:text-white transition duration-300">Crop Calendar</a></li>
+                                    <li><a href="#" className="text-gray-400 hover:text-white transition duration-300">Market Prices</a></li>
+                                    <li><a href="#" className="text-gray-400 hover:text-white transition duration-300">Expert Advice</a></li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold mb-4">Contact Us</h4>
+                                <ul className="space-y-2">
+                                    <li className="flex items-center">
+                                        <i className="fas fa-envelope mr-2 text-gray-400"></i>
+                                        <span className="text-gray-400">support@aiagri.com</span>
+                                    </li>
+                                    <li className="flex items-center">
+                                        <i className="fas fa-phone mr-2 text-gray-400"></i>
+                                        <span className="text-gray-400">+91 1800-123-4567</span>
+                                    </li>
+                                    <li className="flex items-center">
+                                        <i className="fas fa-map-marker-alt mr-2 text-gray-400"></i>
+                                        <span className="text-gray-400">New Delhi, India</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                            <p>© 2023 AI-Agri Advisor. All rights reserved.</p>
+                        </div>
+                    </div>
+                </footer>
+            );
+        }
+        
+        // Render the app
+        ReactDOM.render(<App />, document.getElementById('root'));
+
+        async function callOpenAI(prompt) {
+            const response = await fetch("http://localhost:5000/api/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ message: prompt })
+            });
+            const data = await response.json();
+            return data.response || "Sorry, I couldn't get a response.";
+        }
+    </script>
+</body>
+</html>
